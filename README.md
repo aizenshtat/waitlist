@@ -1,13 +1,7 @@
-# GitHub Codespaces ♥️ Flask
+# An experiment: Citizen developer creating a marketable app using chatGPT
 
-Welcome to your shiny new Codespace running Flask! We've got everything fired up and running for you to explore Flask.
+Even though I taught myself to code on an amateur level, I don't have enough skills to code a fully-featured web-app. I have a lot of ideas, but to have an idea and to execute on it is not the same. 
 
-You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+In this experiment I'm going to attempt create a marketaeble app and sell it to at least three real clients by heavily utilising chtGPT. I will post all my prompts and my journey right here in this repository's wiki.
 
-Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
-
-To run this application:
-
-```
-flask --debug run
-```
+Cheers!

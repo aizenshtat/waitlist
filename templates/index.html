@@ -9,8 +9,22 @@
       <input type="submit" name="submit_button" value="Add to Wait List">
     </form>
     <ul>
-      {% for name in wait_list %}
-      <li>{{ name }}</li>
+      {% for item in wait_list %}
+      <li>
+        Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
+        <form action="/" method="post">
+          <input type="hidden" name="index" value="{{ loop.index0 }}">
+          <input type="text" name="name" value="{{ item.name }}">
+          <input type="submit" name="submit_button" value="Edit">
+          <input type="submit" name="submit_button" value="Delete">
+          {% if item.rank > 1 %}
+          <input type="submit" name="submit_button" value="Move Up">
+          {% endif %}
+          {% if item.rank < wait_list|length %}
+          <input type="submit" name="submit_button" value="Move Down">
+          {% endif %}
+        </form>
+      </li>
       {% endfor %}
     </ul>
     {% if wait_list %}
@@ -20,3 +34,4 @@
     {% endif %}
   </body>
 </html>
+
