@@ -1,10 +1,10 @@
 <html>
   <head>
-    <title>Wait List App</title>
+    <title>Wait List - {{ name }}</title>
   </head>
   <body>
-    <h1>Wait List</h1>
-    <form action="/" method="post">
+    <h1>Wait List - {{ name }}</h1>
+    <form action="/waitlist/{{ name }}" method="post">
       <input type="text" name="name" placeholder="Name">
       <input type="submit" name="submit_button" value="Add to Wait List">
     </form>
@@ -12,7 +12,7 @@
       {% for item in wait_list %}
       <li>
         Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
-        <form action="/" method="post">
+        <form action="/waitlist/{{ name }}" method="post">
           <input type="hidden" name="index" value="{{ loop.index0 }}">
           <input type="text" name="name" value="{{ item.name }}">
           <input type="submit" name="submit_button" value="Edit">
@@ -28,10 +28,10 @@
       {% endfor %}
     </ul>
     {% if wait_list %}
-    <form action="/" method="post">
+    <form action="/waitlist/{{ name }}" method="post">
       <input type="submit" name="submit_button" value="Next in Wait List">
     </form>
     {% endif %}
+    <a href="/manage">Back to Wait List Management</a>
   </body>
 </html>
-

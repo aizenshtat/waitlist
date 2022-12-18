@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>Wait List Management</title>
+  </head>
+  <body>
+    <h1>Wait List Management</h1>
+    <form action="/manage" method="post">
+      <input type="text" name="name" placeholder="Wait List Name">
+      <input type="submit" name="submit_button" value="Create Wait List">
+    </form>
+    <ul>
+      {% for name, wait_list in wait_lists.items() %}
+      <li>
+        Wait List: {{ name }}
+        <form action="/manage" method="post">
+          <input type="hidden" name="name" value="{{ name }}">
+          <input type="text" name="new_name" value="{{ name }}">
+          <input type="submit" name="submit_button" value="Edit">
+          <input type="submit" name="submit_button" value="Delete">
+          <a href="/waitlist/{{ name }}">View Wait List</a>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
