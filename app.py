@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, backref
 
 app = Flask(__name__)
 
@@ -14,7 +14,7 @@ class WaitList(Base):
     __tablename__ = 'wait_lists'
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    entries = relationship("WaitListEntry", back_populates="wait_list", primaryjoin="WaitList.id==WaitListEntry.wait_list_id")
+    entries = relationship("WaitListEntry", cascade="all, delete-orphan", back_populates="wait_list", primaryjoin="WaitList.id==WaitListEntry.wait_list_id")
 
 class WaitListEntry(Base):
     __tablename__ = 'wait_list_entries'
@@ -107,6 +107,11 @@ def wait_list(wait_list_id):
                 session.commit()
     wait_list_entries = session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id).order_by(WaitListEntry.rank).all()
     return render_template("wait_list.html", wait_list_id=wait_list_id, name=wait_list.name, wait_list=wait_list_entries)
+
+@app.route("/entry/<entry_id>")
+def entry_detail(entry_id):
+    entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
+    return render_template("entry_detail.html", entry=entry)
 
 if __name__ == "__main__":
     app.run()

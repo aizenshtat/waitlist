@@ -23,6 +23,7 @@
                 {% if item.rank < wait_list|length %}
                 <input type="submit" name="submit_button" value="Move Down">
                 {% endif %}
+                <a href="/entry/{{ item.id }}">View Detail</a>
             </form>
         </li>
         {% endfor %}
