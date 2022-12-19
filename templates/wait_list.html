@@ -1,37 +1,37 @@
 <html>
-  <head>
+<head>
     <title>Wait List - {{ name }}</title>
-  </head>
-  <body>
+</head>
+<body>
     <h1>Wait List - {{ name }}</h1>
-    <form action="/waitlist/{{ name }}" method="post">
-      <input type="text" name="name" placeholder="Name">
-      <input type="submit" name="submit_button" value="Add to Wait List">
+    <form action="/waitlist/{{ wait_list_id }}" method="post">
+        <input type="text" name="name" placeholder="Name">
+        <input type="submit" name="submit_button" value="Add to Wait List">
     </form>
     <ul>
-      {% for item in wait_list %}
-      <li>
-        Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
-        <form action="/waitlist/{{ name }}" method="post">
-          <input type="hidden" name="index" value="{{ loop.index0 }}">
-          <input type="text" name="name" value="{{ item.name }}">
-          <input type="submit" name="submit_button" value="Edit">
-          <input type="submit" name="submit_button" value="Delete">
-          {% if item.rank > 1 %}
-          <input type="submit" name="submit_button" value="Move Up">
-          {% endif %}
-          {% if item.rank < wait_list|length %}
-          <input type="submit" name="submit_button" value="Move Down">
-          {% endif %}
-        </form>
-      </li>
-      {% endfor %}
+        {% for item in wait_list %}
+        <li>
+            Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
+            <form action="/waitlist/{{ wait_list_id }}" method="post">
+                <input type="hidden" name="entry_id" value="{{ item.id }}">
+                <input type="text" name="name" value="{{ item.name }}">
+                <input type="submit" name="submit_button" value="Edit">
+                <input type="submit" name="submit_button" value="Delete">
+                {% if item.rank > 1 %}
+                <input type="submit" name="submit_button" value="Move Up">
+                {% endif %}
+                {% if item.rank < wait_list|length %}
+                <input type="submit" name="submit_button" value="Move Down">
+                {% endif %}
+            </form>
+        </li>
+        {% endfor %}
     </ul>
     {% if wait_list %}
-    <form action="/waitlist/{{ name }}" method="post">
-      <input type="submit" name="submit_button" value="Next in Wait List">
+    <form action="/waitlist/{{ wait_list_id }}" method="post">
+        <input type="submit" name="submit_button" value="Next in Wait List">
     </form>
     {% endif %}
     <a href="/manage">Back to Wait List Management</a>
-  </body>
+</body>
 </html>

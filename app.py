@@ -1,25 +1,35 @@
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
-import sqlite3
-
-# Connect to the database file
-conn = sqlite3.connect("wait_lists.db")
-
-# Create the "wait_lists" table
-conn.execute("CREATE TABLE wait_lists (name text PRIMARY KEY, timestamp text)")
-
-# Create the "wait_list_items" table
-conn.execute("CREATE TABLE wait_list_items (wait_list_name text, name text, timestamp text, rank integer, PRIMARY KEY (wait_list_name, name))")
-
-# Commit the changes to the database
-conn.commit()
-
-# Close the connection
-conn.close()
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
 
 app = Flask(__name__)
 
-wait_lists = {}
+# Set up database
+engine = create_engine('sqlite:///wait_lists.db')
+Base = declarative_base()
+
+class WaitList(Base):
+    __tablename__ = 'wait_lists'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    entries = relationship("WaitListEntry", back_populates="wait_list", primaryjoin="WaitList.id==WaitListEntry.wait_list_id")
+
+class WaitListEntry(Base):
+    __tablename__ = 'wait_list_entries'
+    id = Column(Integer, primary_key=True)
+    wait_list_id = Column(Integer, ForeignKey('wait_lists.id'))
+    name = Column(String)
+    timestamp = Column(DateTime)
+    rank = Column(Integer)
+    wait_list = relationship("WaitList", back_populates="entries")
+
+Base.metadata.create_all(engine)
+
+# Set up database session
+Session = sessionmaker(bind=engine)
+session = Session()
 
 @app.route("/")
 def index():
@@ -30,52 +40,73 @@ def manage_wait_lists():
     if request.method == "POST":
         if request.form["submit_button"] == "Create Wait List":
             name = request.form["name"]
-            if name not in wait_lists:
-                wait_lists[name] = []
+            wait_list = WaitList(name=name)
+            session.add(wait_list)
+            session.commit()
         elif request.form["submit_button"] == "Edit":
-            old_name = request.form["name"]
+            wait_list_id = request.form["wait_list_id"]
             new_name = request.form["new_name"]
-            if new_name not in wait_lists:
-                wait_lists[new_name] = wait_lists[old_name]
-                del wait_lists[old_name]
+            wait_list = session.query(WaitList).filter_by(id=wait_list_id).first()
+            wait_list.name = new_name
+            session.commit()
         elif request.form["submit_button"] == "Delete":
-            name = request.form["name"]
-            del wait_lists[name]
+            wait_list_id = request.form["wait_list_id"]
+            wait_list = session.query(WaitList).filter_by(id=wait_list_id).first()
+            session.delete(wait_list)
+            session.commit()
+    wait_lists = session.query(WaitList).all()
     return render_template("manage.html", wait_lists=wait_lists)
 
-@app.route("/waitlist/<name>", methods=["GET", "POST"])
-def wait_list(name):
+@app.route("/waitlist/<wait_list_id>", methods=["GET", "POST"])
+def wait_list(wait_list_id):
+    wait_list = session.query(WaitList).filter_by(id=wait_list_id).first()
     if request.method == "POST":
         if request.form["submit_button"] == "Add to Wait List":
             item_name = request.form["name"]
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            wait_lists[name].append({"name": item_name, "timestamp": timestamp, "rank": len(wait_lists[name]) + 1})
+            timestamp = datetime.now()
+            wait_list_entry = WaitListEntry(wait_list_id=wait_list_id, name=item_name, timestamp=timestamp, rank=len(wait_list.entries) + 1)
+            session.add(wait_list_entry)
+            session.commit()
         elif request.form["submit_button"] == "Next in Wait List":
-            next_item = wait_lists[name][0]
-            wait_lists[name].pop(0)
-            for i in range(len(wait_lists[name])):
-                wait_lists[name][i]["rank"] -= 1
+            next_item = session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id).order_by(WaitListEntry.rank).first()
+            session.delete(next_item)
+            session.commit()
+            for i in range(len(wait_list.entries)):
+                wait_list.entries[i].rank -= 1
+                session.commit()
         elif request.form["submit_button"] == "Move Up":
-            index = int(request.form["index"])
-            if index > 0:
-                wait_lists[name][index], wait_lists[name][index - 1] = wait_lists[name][index - 1], wait_lists[name][index]
-                wait_lists[name][index]["rank"], wait_lists[name][index - 1]["rank"] = wait_lists[name][index - 1]["rank"], wait_lists[name][index]["rank"]
+            entry_id = request.form["entry_id"]
+            entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
+            if entry.rank > 1:
+               # Get the entry that is currently ranked one position above the current entry
+                prev_entry = session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id, rank=entry.rank-1).first()
+                # Swap the ranks of the two entries
+                entry.rank, prev_entry.rank = prev_entry.rank, entry.rank
+                session.commit()
         elif request.form["submit_button"] == "Move Down":
-            index = int(request.form["index"])
-            if index < len(wait_lists[name]) - 1:
-                wait_lists[name][index], wait_lists[name][index + 1] = wait_lists[name][index + 1], wait_lists[name][index]
-                wait_lists[name][index]["rank"], wait_lists[name][index + 1]["rank"] = wait_lists[name][index + 1]["rank"], wait_lists[name][index]["rank"]
+            entry_id = request.form["entry_id"]
+            entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
+            if entry.rank < len(wait_list.entries):
+               # Get the entry that is currently ranked one position below the current entry
+                next_entry = session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id, rank=entry.rank+1).first()
+                # Swap the ranks of the two entries
+                entry.rank, next_entry.rank = next_entry.rank, entry.rank
+                session.commit()
         elif request.form["submit_button"] == "Edit":
-            index = int(request.form["index"])
-            item_name = request.form["name"]
-            wait_lists[name][index]["name"] = item_name
+            entry_id = request.form["entry_id"]
+            entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
+            entry.name = request.form["name"]
+            session.commit()
         elif request.form["submit_button"] == "Delete":
-            index = int(request.form["index"])
-            wait_lists[name].pop(index)
-            for i in range(index, len(wait_lists[name])):
-                wait_lists[name][i]["rank"] -= 1
-    return render_template("wait_list.html", name=name, wait_list=wait_lists[name])
+            entry_id = request.form["entry_id"]
+            entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
+            session.delete(entry)
+            session.commit()
+            for i in range(entry.rank - 1, len(wait_list.entries)):
+                wait_list.entries[i].rank -= 1
+                session.commit()
+    wait_list_entries = session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id).order_by(WaitListEntry.rank).all()
+    return render_template("wait_list.html", wait_list_id=wait_list_id, name=wait_list.name, wait_list=wait_list_entries)
 
 if __name__ == "__main__":
     app.run()
-
