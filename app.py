@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response, send_file, send_from_directory
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm import sessionmaker, relationship
+import qrcode
+from PIL import Image
 
+cs_host = 'https://aizenshtat-bug-free-potato-q99qqwx59g7395jx-5000.preview.app.github.dev/'
 app = Flask(__name__)
 
 # Set up database
@@ -112,6 +115,35 @@ def wait_list(wait_list_id):
 def entry_detail(entry_id):
     entry = session.query(WaitListEntry).filter_by(id=entry_id).first()
     return render_template("entry_detail.html", entry=entry)
+
+@app.route("/add_to_waitlist/<wait_list_id>")
+def add_to_waitlist(wait_list_id):
+    wait_list = session.query(WaitList).filter_by(id=wait_list_id).first()
+    timestamp = datetime.now()
+    wait_list_entry = WaitListEntry(wait_list_id=wait_list_id, name="", timestamp=timestamp, rank=len(wait_list.entries) + 1)
+    session.add(wait_list_entry)
+    session.commit()
+    return redirect(url_for("entry_detail", entry_id=wait_list_entry.id))
+
+@app.route("/qr/<wait_list_id>")
+def qr(wait_list_id):
+    # Generate QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(cs_host + "add_to_waitlist/" + wait_list_id)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Save QR code to file
+    img.save(f"static/qr_codes/{wait_list_id}.png")
+    
+    return send_from_directory(
+        "static/qr_codes", f"{wait_list_id}.png", mimetype="image/png"
+    )
 
 if __name__ == "__main__":
     app.run()
