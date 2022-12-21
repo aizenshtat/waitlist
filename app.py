@@ -1,20 +1,38 @@
+from flask import Flask, render_template, request, redirect, url_for, make_response, send_file, send_from_directory
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
 import qrcode
-from .models import db, WaitList, WaitListEntry
+from PIL import Image
 
-# Blueprint Configuration
-main_bp = Blueprint(
-    'main_bp', __name__,
-    template_folder='templates',
-    static_folder='static'
-)
+cs_host = 'https://aizenshtat-bug-free-potato-q99qqwx59g7395jx-5000.preview.app.github.dev/'
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wait_lists.db'
+db = SQLAlchemy(app)
 
-@main_bp.route("/")
+class WaitList(db.Model):
+    __tablename__ = 'wait_lists'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    entries = db.relationship("WaitListEntry", cascade="all, delete-orphan", back_populates="wait_list", primaryjoin="WaitList.id==WaitListEntry.wait_list_id")
+
+class WaitListEntry(db.Model):
+    __tablename__ = 'wait_list_entries'
+    id = db.Column(db.Integer, primary_key=True)
+    wait_list_id = db.Column(db.Integer, db.ForeignKey('wait_lists.id'))
+    name = db.Column(db.String)
+    timestamp = db.Column(db.DateTime)
+    rank = db.Column(db.Integer)
+    wait_list = db.relationship("WaitList", back_populates="entries")
+
+with app.app_context():
+    # Create Database Models
+    db.create_all()
+    
+@app.route("/")
 def index():
-    return redirect(url_for("main_bp.manage_wait_lists"))
+    return redirect(url_for("manage_wait_lists"))
 
-@main_bp.route("/manage", methods=["GET", "POST"])
+@app.route("/manage", methods=["GET", "POST"])
 def manage_wait_lists():
     if request.method == "POST":
         if request.form["submit_button"] == "Create Wait List":
@@ -36,7 +54,7 @@ def manage_wait_lists():
     wait_lists = db.session.query(WaitList).all()
     return render_template("manage.html", wait_lists=wait_lists)
 
-@main_bp.route("/waitlist/<wait_list_id>", methods=["GET", "POST"])
+@app.route("/waitlist/<wait_list_id>", methods=["GET", "POST"])
 def wait_list(wait_list_id):
     wait_list = db.session.query(WaitList).filter_by(id=wait_list_id).first()
     if request.method == "POST":
@@ -87,21 +105,21 @@ def wait_list(wait_list_id):
     wait_list_entries = db.session.query(WaitListEntry).filter_by(wait_list_id=wait_list_id).order_by(WaitListEntry.rank).all()
     return render_template("wait_list.html", wait_list_id=wait_list_id, name=wait_list.name, wait_list=wait_list_entries)
 
-@main_bp.route("/entry/<entry_id>")
+@app.route("/entry/<entry_id>")
 def entry_detail(entry_id):
     entry = db.session.query(WaitListEntry).filter_by(id=entry_id).first()
     return render_template("entry_detail.html", entry=entry)
 
-@main_bp.route("/add_to_waitlist/<wait_list_id>")
+@app.route("/add_to_waitlist/<wait_list_id>")
 def add_to_waitlist(wait_list_id):
     wait_list = db.session.query(WaitList).filter_by(id=wait_list_id).first()
     timestamp = datetime.now()
     wait_list_entry = WaitListEntry(wait_list_id=wait_list_id, name="", timestamp=timestamp, rank=len(wait_list.entries) + 1)
     db.session.add(wait_list_entry)
     db.session.commit()
-    return redirect(url_for("main_bp.entry_detail", entry_id=wait_list_entry.id))
+    return redirect(url_for("entry_detail", entry_id=wait_list_entry.id))
 
-@main_bp.route("/qr/<wait_list_id>")
+@app.route("/qr/<wait_list_id>")
 def qr(wait_list_id):
     # Generate QR code
     qr = qrcode.QRCode(
@@ -110,13 +128,16 @@ def qr(wait_list_id):
         box_size=10,
         border=4,
     )
-    qr.add_data(url_for("main_bp.add_to_waitlist", wait_list_id = wait_list_id))
+    qr.add_data(cs_host + "add_to_waitlist/" + wait_list_id)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
     # Save QR code to file
-    img.save(f"waitlist_app/static/qr_codes/{wait_list_id}.png")
+    img.save(f"static/qr_codes/{wait_list_id}.png")
     
     return send_from_directory(
         "static/qr_codes", f"{wait_list_id}.png", mimetype="image/png"
     )
+
+if __name__ == "__main__":
+    app.run()
