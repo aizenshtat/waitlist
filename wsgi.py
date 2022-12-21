@@ -1,7 +1,7 @@
-from application import init_app
+from waitlist_app import init_app
 
 
-app = init_app()
+application = init_app()
 
 if __name__ == "__main__":
-    app.run()
+    application.run()

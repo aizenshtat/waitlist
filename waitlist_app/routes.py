@@ -1,7 +1,6 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, send_file, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory
 import qrcode
-from PIL import Image
 from .models import db, WaitList, WaitListEntry
 
 # Blueprint Configuration
@@ -13,7 +12,7 @@ main_bp = Blueprint(
 
 @main_bp.route("/")
 def index():
-    return redirect(url_for("manage_wait_lists"))
+    return redirect(url_for("main_bp.manage_wait_lists"))
 
 @main_bp.route("/manage", methods=["GET", "POST"])
 def manage_wait_lists():
@@ -100,7 +99,7 @@ def add_to_waitlist(wait_list_id):
     wait_list_entry = WaitListEntry(wait_list_id=wait_list_id, name="", timestamp=timestamp, rank=len(wait_list.entries) + 1)
     db.session.add(wait_list_entry)
     db.session.commit()
-    return redirect(url_for("entry_detail", entry_id=wait_list_entry.id))
+    return redirect(url_for("main_bp.entry_detail", entry_id=wait_list_entry.id))
 
 @main_bp.route("/qr/<wait_list_id>")
 def qr(wait_list_id):
@@ -111,12 +110,12 @@ def qr(wait_list_id):
         box_size=10,
         border=4,
     )
-    qr.add_data(cs_host + "add_to_waitlist/" + wait_list_id)
+    qr.add_data(url_for("main_bp.add_to_waitlist", wait_list_id = wait_list_id))
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
     # Save QR code to file
-    img.save(f"static/qr_codes/{wait_list_id}.png")
+    img.save(f"waitlist_app/static/qr_codes/{wait_list_id}.png")
     
     return send_from_directory(
         "static/qr_codes", f"{wait_list_id}.png", mimetype="image/png"
