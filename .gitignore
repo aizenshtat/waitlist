@@ -1,4 +1,4 @@
 __pycache__/
 .vscode/
+static/qr_codes/
 instance/
-waitlist_app/static/qr_codes/
