@@ -1,8 +1,6 @@
-<html>
-<head>
-    <title>Wait List - {{ name }}</title>
-</head>
-<body>
+{% extends "layout.html" %}
+{% block title %}Wait List - {{ name }}{% endblock %}
+{% block content %}
     <h1>Wait List - {{ name }}</h1>
     <form action="/waitlist/{{ wait_list_id }}" method="post">
         <input type="text" name="name" placeholder="Name">
@@ -11,20 +9,23 @@
     <ul>
         {% for item in wait_list %}
         <li>
-            Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
-            <form action="/waitlist/{{ wait_list_id }}" method="post">
-                <input type="hidden" name="entry_id" value="{{ item.id }}">
-                <input type="text" name="name" value="{{ item.name }}">
-                <input type="submit" name="submit_button" value="Edit">
-                <input type="submit" name="submit_button" value="Delete">
-                {% if item.rank > 1 %}
-                <input type="submit" name="submit_button" value="Move Up">
-                {% endif %}
-                {% if item.rank < wait_list|length %}
-                <input type="submit" name="submit_button" value="Move Down">
-                {% endif %}
-                <a href="/entry/{{ item.id }}">View Detail</a>
-            </form>
+            <div class="record">
+                Rank: {{ item.rank }} | Name: {{ item.name }} | Timestamp: {{ item.timestamp }}
+
+                <form action="/waitlist/{{ wait_list_id }}" method="post">
+                    <input type="hidden" name="entry_id" value="{{ item.id }}">
+                    <input type="text" name="name" value="{{ item.name }}">
+                    <input type="submit" name="submit_button" value="Edit">
+                    <input type="submit" name="submit_button" value="Delete">
+                    {% if item.rank > 1 %}
+                    <input type="submit" name="submit_button" value="Move Up">
+                    {% endif %}
+                    {% if item.rank < wait_list|length %}
+                    <input type="submit" name="submit_button" value="Move Down">
+                    {% endif %}
+                    <a href="/entry/{{ item.id }}">View Detail</a>
+                </form>
+            </div>
         </li>
         {% endfor %}
     </ul>
@@ -35,5 +36,4 @@
     {% endif %}
     <a href="/manage">Back to Wait List Management</a>
     <img src="{{ url_for('main_bp.qr', wait_list_id=wait_list_id) }}">
-</body>
-</html>
+{% endblock %}

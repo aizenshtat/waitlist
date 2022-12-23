@@ -1,0 +1,44 @@
+.header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.header a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.side-panel {
+    float: left;
+    width: 20%;
+}
+
+.main-content {
+    float: right;
+    width: 80%;
+}
+
+li {
+    padding: 10px;
+    margin: 10px;
+}
+
+.record {
+    height: 50px;
+    background-color: #f6f7f9;
+    padding: 10px;
+}
+
+.record form {
+    display: inline;
+}
+
+.record form input[type="text"] {
+    width: 50px;
+}
+
+.record form input[type="submit"] {
+    width: 75px;
+}

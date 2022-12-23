@@ -1,8 +1,6 @@
-<html>
-<head>
-    <title>Manage Wait Lists</title>
-</head>
-<body>
+{% extends "layout.html" %}
+{% block title %}Manage Wait Lists{% endblock %}
+{% block content %}
     <h1>Manage Wait Lists</h1>
     <form action="/manage" method="post">
         <input type="text" name="name" placeholder="Wait List Name">
@@ -20,5 +18,4 @@
         <li><a href="/waitlist/{{ wait_list.id }}">View Wait List</a></li>
     </ul>
     {% endfor %}
-</body>
-</html>
+{% endblock %}

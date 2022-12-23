@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>   
+    <div class="header">
+        {% block header %}
+            <a href="{{ url_for('main_bp.index') }}">Home</a>
+        {% endblock %}
+    </div>    
+    {% include 'side_panel.html' %}
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>
